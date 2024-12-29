@@ -66,17 +66,11 @@ public class GameWebController {
     @GetMapping("/new")
     public String doGetNew(@ModelAttribute(name = "board") GameBoard board) {
         GameState state = this.jumbleEngine.createGameState(6, 3);
-
-        /*
-         * TODO:
-         * a) Assign the created game `state` (with randomly picked word) into
-         *        game `board` (session attribute)
-         * b) Presentation page to show the information of game board/state
-         * c) Must pass the corresponding unit tests
-         */
-
-        return "game/board";
+        board.setState(state); // Assign the game state to the board
+    
+        return "game/board"; // Ensure the correct view is returned
     }
+    
 
     @GetMapping("/play")
     public String doGetPlay(@ModelAttribute(name = "board") GameBoard board) {
@@ -93,20 +87,33 @@ public class GameWebController {
             // session expired
             return "game/board";
         }
-
+    
+        String guessedWord = board.getWord(); // Use the correct getter method to retrieve guessed word
+        if (guessedWord == null || guessedWord.trim().isEmpty()) {
+            model.addAttribute("error", "Please enter a word.");
+            return "game/board";
+        }
+    
+        if (!jumbleEngine.exists(guessedWord)) {
+            model.addAttribute("error", "Guessed incorrectly");
+            return "game/board";
+        }
+    
+        if (guessedWord.equals(board.getState().getOriginal())) {
+            model.addAttribute("error", "Guessed incorrectly");
+            return "game/board";
+        }
+    
+        board.getState().getSubWords().put(guessedWord, true);
+        board.setWord(null); // Clear the guessed word field
+    
+        if (board.getState().getSubWords().values().stream().allMatch(Boolean::booleanValue)) {
+            model.addAttribute("message", "Congratulations! You've guessed all the words.");
+        }
+    
         scrambleWord(board);
-
-        /*
-         * TODO:
-         * a) Validate the input `word`
-         * b) From the input guessing `word`, implement the game logic
-         * c) Update the game `board` (session attribute)
-         * d) Show the error: "Guessed incorrectly", when word is guessed incorrectly.
-         * e) Presentation page to show the information of game board/state
-         * f) Must pass the corresponding unit tests
-         */
-
-        return "game/board";
+    
+        return "game/board"; // Ensure the correct view is returned
     }
 
 }

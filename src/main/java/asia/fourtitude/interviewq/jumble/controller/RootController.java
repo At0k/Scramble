@@ -1,6 +1,7 @@
 package asia.fourtitude.interviewq.jumble.controller;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,18 +47,18 @@ public class RootController {
     }
 
     @PostMapping("scramble")
-    public String doPostScramble(
-            @ModelAttribute(name = "form") ScrambleForm form,
-            BindingResult bindingResult, Model model) {
-        /*
-         * TODO:
-         * a) Validate the input `form`
-         * b) To call JumbleEngine#scramble()
-         * c) Presentation page to show the result
-         * d) Must pass the corresponding unit tests
-         */
-
+public String doPostScramble(
+        @ModelAttribute(name = "form") ScrambleForm form,
+        BindingResult bindingResult, Model model) {
+    if (form.getWord() == null || form.getWord().trim().isEmpty()) {
+        bindingResult.rejectValue("word", "error.form", "Please enter a word.");
         return "scramble";
+    }
+    
+    String scrambledWord = jumbleEngine.scramble(form.getWord());
+    model.addAttribute("scrambledWord", scrambledWord);
+    
+    return "scramble";
     }
 
     @GetMapping("palindrome")
@@ -74,17 +75,17 @@ public class RootController {
 
     @PostMapping("exists")
     public String doPostExists(
-            @ModelAttribute(name = "form") ExistsForm form,
-            BindingResult bindingResult, Model model) {
-        /*
-         * TODO:
-         * a) Validate the input `form`
-         * b) To call JumbleEngine#exists()
-         * c) Presentation page to show the result
-         * d) Must pass the corresponding unit tests
-         */
-
+        @ModelAttribute(name = "form") ExistsForm form,
+        BindingResult bindingResult, Model model) {
+    if (form.getWord() == null || form.getWord().trim().isEmpty()) {
+        bindingResult.rejectValue("word", "error.form", "Please enter a word.");
         return "exists";
+    }
+    
+    boolean exists = jumbleEngine.exists(form.getWord());
+    model.addAttribute("exists", exists);
+    
+    return "exists";
     }
 
     @GetMapping("prefix")
@@ -95,17 +96,17 @@ public class RootController {
 
     @PostMapping("prefix")
     public String doPostPrefix(
-            @ModelAttribute(name = "form") PrefixForm form,
-            BindingResult bindingResult, Model model) {
-        /*
-         * TODO:
-         * a) Validate the input `form`
-         * b) To call JumbleEngine#wordsMatchingPrefix()
-         * c) Presentation page to show the result
-         * d) Must pass the corresponding unit tests
-         */
-
+        @ModelAttribute(name = "form") PrefixForm form,
+        BindingResult bindingResult, Model model) {
+    if (form.getPrefix() == null || form.getPrefix().trim().isEmpty()) {
+        bindingResult.rejectValue("prefix", "error.form", "Please enter a prefix.");
         return "prefix";
+    }
+
+    Collection<String> words = jumbleEngine.wordsMatchingPrefix(form.getPrefix());
+    model.addAttribute("words", words);
+
+    return "prefix";
     }
 
     @GetMapping("search")
@@ -118,18 +119,33 @@ public class RootController {
     public String doPostSearch(
             @ModelAttribute(name = "form") SearchForm form,
             BindingResult bindingResult, Model model) {
-        /*
-         * TODO:
-         * a) Validate the input `form`
-         * b) Show the fields error accordingly: "Invalid startChar", "Invalid endChar", "Invalid length".
-         * c) To call JumbleEngine#searchWords()
-         * d) Presentation page to show the result
-         * e) Must pass the corresponding unit tests
-         */
-
+        boolean hasErrors = false;
+    
+        if (form.getStartChar() != null && !Character.isLetter(form.getStartChar())) {
+            bindingResult.rejectValue("startChar", "error.form", "Invalid startChar");
+            hasErrors = true;
+        }
+    
+        if (form.getEndChar() != null && !Character.isLetter(form.getEndChar())) {
+            bindingResult.rejectValue("endChar", "error.form", "Invalid endChar");
+            hasErrors = true;
+        }
+    
+        if (form.getLength() != null && form.getLength() < 1) {
+            bindingResult.rejectValue("length", "error.form", "Invalid length");
+            hasErrors = true;
+        }
+    
+        if (hasErrors) {
+            return "search";
+        }
+    
+        Collection<String> words = jumbleEngine.searchWords(form.getStartChar(), form.getEndChar(), form.getLength());
+        model.addAttribute("words", words);
+    
         return "search";
     }
-
+    
     @GetMapping("subWords")
     public String goGetSubWords(Model model) {
         model.addAttribute("form", new SubWordsForm());
@@ -140,15 +156,22 @@ public class RootController {
     public String doPostSubWords(
             @ModelAttribute(name = "form") SubWordsForm form,
             BindingResult bindingResult, Model model) {
-        /*
-         * TODO:
-         * a) Validate the input `form`
-         * b) To call JumbleEngine#generateSubWords()
-         * c) Presentation page to show the result
-         * d) Must pass the corresponding unit tests
-         */
-
+        if (form.getWord() == null || form.getWord().trim().isEmpty()) {
+            bindingResult.rejectValue("word", "error.form", "Please enter a word.");
+            return "subWords";
+        }
+    
+        if (form.getMinLength() == null || form.getMinLength() < 1) {
+            bindingResult.rejectValue("minLength", "error.form", "Invalid minLength");
+            return "subWords";
+        }
+    
+        Collection<String> subWords = jumbleEngine.generateSubWords(form.getWord(), form.getMinLength());
+        model.addAttribute("subWords", subWords);
+    
         return "subWords";
     }
+    
+
 
 }
